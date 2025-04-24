@@ -87,37 +87,56 @@ const CCTVInstallationForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  
+  // 자동 스크롤 관련 상태
+  const [autoScrollEnabled, setAutoScrollEnabled] = useState(true); // 자동 스크롤 활성화 여부
+  const [userScrolledUp, setUserScrolledUp] = useState(false); // 사용자가 위로 스크롤했는지 여부
+  
+  // 참조 객체
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  
-  // 사용자 수동 스크롤 상태 추적
-  const [userHasScrolled, setUserHasScrolled] = useState(false);
   const prevScrollTopRef = useRef(0);
   const prevMessagesLengthRef = useRef(0);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null); // 스크롤 디바운스를 위한 타이머
   
-  // 스크롤 이벤트 처리
+  // 스크롤 이벤트 처리 - 디바운스 적용
   useEffect(() => {
     const handleScroll = () => {
       if (!chatContainerRef.current) return;
       
-      const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
-      
-      // 사용자가 수동으로 스크롤했는지 확인 (스크롤 위치가 변경되었는지)
-      if (Math.abs(scrollTop - prevScrollTopRef.current) > 5) {
-        setUserHasScrolled(true);
+      // 스크롤 타이머 있으면 취소 (디바운스)
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
       }
       
-      // 스크롤이 거의 하단에 있는지 확인 (30px 여유)
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 30;
-      
-      // 사용자가 하단으로 스크롤하면 자동 스크롤 다시 활성화
-      if (isAtBottom) {
-        setShouldAutoScroll(true);
-        setUserHasScrolled(false);
-      }
-      
-      prevScrollTopRef.current = scrollTop;
+      // 50ms 디바운스 후 스크롤 상태 처리
+      scrollTimeoutRef.current = setTimeout(() => {
+        const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current!;
+        
+        // 이전 스크롤 위치와 현재 위치 비교
+        const scrollDelta = scrollTop - prevScrollTopRef.current;
+        
+        // 사용자가 위로 스크롤했는지 확인 (음수 = 위로 스크롤)
+        if (scrollDelta < -10) {
+          setUserScrolledUp(true);
+          setAutoScrollEnabled(false);
+          console.log('사용자가 위로 스크롤함: 자동 스크롤 비활성화');
+        }
+        
+        // 스크롤이 거의 하단에 있는지 확인 (50px 여유)
+        const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+        
+        // 사용자가 하단으로 스크롤하면 자동 스크롤 다시 활성화
+        if (isAtBottom && userScrolledUp) {
+          setAutoScrollEnabled(true);
+          setUserScrolledUp(false);
+          console.log('사용자가 하단으로 스크롤함: 자동 스크롤 다시 활성화');
+        }
+        
+        // 현재 스크롤 위치 저장
+        prevScrollTopRef.current = scrollTop;
+        scrollTimeoutRef.current = null;
+      }, 50);
     };
 
     const chatContainer = chatContainerRef.current;
@@ -129,25 +148,36 @@ const CCTVInstallationForm = () => {
       if (chatContainer) {
         chatContainer.removeEventListener('scroll', handleScroll);
       }
+      
+      // 정리 시 타이머 취소
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
     };
-  }, []);
+  }, [userScrolledUp]);
   
   // 새 메시지 추가 시 스크롤 처리
   useEffect(() => {
     // 메시지가 추가된 경우에만 스크롤 처리
     if (messages.length > prevMessagesLengthRef.current) {
-      // 사용자가 수동으로 스크롤하지 않았거나, 자동 스크롤이 활성화된 경우에만 스크롤
-      if (!userHasScrolled && shouldAutoScroll) {
+      console.log(`메시지 추가됨: ${messages.length}, 자동스크롤=${autoScrollEnabled}, 위로스크롤=${userScrolledUp}`);
+      
+      // 사용자가 위로 스크롤하지 않았거나 자동 스크롤이 활성화된 경우에만 스크롤
+      if (autoScrollEnabled && !userScrolledUp) {
         // 스크롤 업데이트를 다음 티크에 실행하여 렌더링 완료 후 스크롤되도록 함
         setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          if (messagesEndRef.current && autoScrollEnabled) {
+            console.log('자동 스크롤 실행');
+            // behavior: 'smooth'를 제거하고 block: 'nearest'로 설정하여 필요한 만큼만 스크롤
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
         }, 100);
       }
     }
     
     // 현재 메시지 길이 저장
     prevMessagesLengthRef.current = messages.length;
-  }, [messages, shouldAutoScroll, userHasScrolled]);
+  }, [messages, autoScrollEnabled, userScrolledUp]);
   
   // 컴포넌트 마운트 시 초기화 - 클라이언트 사이드에서만 실행
   useEffect(() => {
@@ -238,8 +268,9 @@ const CCTVInstallationForm = () => {
     }
     
     // 사용자가 옵션을 선택했으니 자동 스크롤 활성화
-    setShouldAutoScroll(true);
-    setUserHasScrolled(false); // 사용자 수동 스크롤 상태 초기화
+    setAutoScrollEnabled(true);
+    setUserScrolledUp(false);
+    console.log('옵션 선택됨: 자동 스크롤 활성화');
     
     // 다음 단계로 이동
     setTimeout(() => {
@@ -317,8 +348,12 @@ const CCTVInstallationForm = () => {
         <p className="text-right text-xs text-[#693BF2] mt-1">{progress}%</p>
       </div>
       
-      {/* 채팅 영역 */}
-      <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* 채팅 영역 - 스크롤 컨테이너 */}
+      <div 
+        ref={chatContainerRef} 
+        className="flex-1 overflow-y-auto p-4 space-y-4"
+        style={{ scrollBehavior: 'smooth' }}
+      >
         {messages.map(message => (
           <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
             {message.type === 'system' && (
@@ -368,12 +403,16 @@ const CCTVInstallationForm = () => {
         <div ref={messagesEndRef} />
       </div>
       
-      {/* 하단 고정 버튼 (마지막 단계가 아닐 때만 표시) */}
-      {isSubmitting && (
-        <div className="bg-white p-4 border-t">
-          <div className="bg-gray-200 text-gray-500 p-3 rounded-lg text-center">
-            신청서 제출 중...
-          </div>
+      {/* 하단 고정 버튼 영역 (미제출 상태) - z-index 추가하여 스크롤과 분리 */}
+      {!isSubmitting && !isSubmitted && (
+        <div className="bg-white p-4 border-t sticky bottom-0 z-10">
+          <button
+            onClick={handleSubmit}
+            className="w-full bg-[#693BF2] text-white p-3 rounded-lg font-medium"
+            disabled={!formData.name || !formData.phone}
+          >
+            무료 견적 받기
+          </button>
         </div>
       )}
     </div>
