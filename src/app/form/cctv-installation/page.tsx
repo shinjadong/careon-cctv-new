@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, Check } from 'lucide-react';
+import { useId } from 'react';
 
 type FormData = {
   installationType?: string;
@@ -27,6 +28,58 @@ type Message = {
   field?: string;
 };
 
+// 채팅 단계 정의 - 컴포넌트 외부로 이동
+// 매 렌더링마다 새로 생성되지 않도록 컴포넌트 외부에 정의
+const FORM_STEPS = [
+  {
+    question: '몇 가지 질문만 알려주시면 편리한 견적을 받을 수 있어요.',
+    field: 'intro',
+    options: [],
+  },
+  {
+    question: '어떤 서비스를 원하시나요?',
+    field: 'installationType',
+    options: ['가정용', '상업용', '사무실', '공장/창고', '기타'],
+  },
+  {
+    question: 'CCTV 수량을 알려주세요.',
+    field: 'cameraCount',
+    options: ['1~2대', '3~4대', '5~8대', '9대 이상', '미정'],
+  },
+  {
+    question: 'CCTV 관련 희망사항을 알려주세요.',
+    field: 'installationArea',
+    options: ['실내', '실외', '실내외 모두'],
+  },
+  {
+    question: '설치 목적을 알려주세요.',
+    field: 'installationPurpose',
+    options: ['방범용', '매장 관리', '시설 안전 관리', '직원 관리', '기타'],
+  },
+  {
+    question: '서비스를 원하는 지역을 알려주세요.',
+    field: 'location',
+    options: ['서울', '경기', '인천', '부산', '대구', '광주', '대전', '울산', '세종', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'],
+  },
+  {
+    question: '이름을 알려주세요.',
+    field: 'name',
+    options: [],
+    inputType: 'text',
+  },
+  {
+    question: '연락처를 알려주세요.',
+    field: 'phone',
+    options: [],
+    inputType: 'tel',
+  },
+  {
+    question: '플랫폼 이용약관과 개인정보 처리방침에 동의합니다.',
+    field: 'agreeTerms',
+    options: ['확인했습니다.'],
+  },
+];
+
 const CCTVInstallationForm = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -34,65 +87,69 @@ const CCTVInstallationForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   
-  // 채팅 단계 정의
-  const steps = [
-    {
-      question: '몇 가지 질문만 알려주시면 편리한 견적을 받을 수 있어요.',
-      field: 'intro',
-      options: [],
-    },
-    {
-      question: '어떤 서비스를 원하시나요?',
-      field: 'installationType',
-      options: ['가정용', '상업용', '사무실', '공장/창고', '기타'],
-    },
-    {
-      question: 'CCTV 수량을 알려주세요.',
-      field: 'cameraCount',
-      options: ['1~2대', '3~4대', '5~8대', '9대 이상', '미정'],
-    },
-    {
-      question: 'CCTV 관련 희망사항을 알려주세요.',
-      field: 'installationArea',
-      options: ['실내', '실외', '실내외 모두'],
-    },
-    {
-      question: '설치 목적을 알려주세요.',
-      field: 'installationPurpose',
-      options: ['방범용', '매장 관리', '시설 안전 관리', '직원 관리', '기타'],
-    },
-    {
-      question: '서비스를 원하는 지역을 알려주세요.',
-      field: 'location',
-      options: ['서울', '경기', '인천', '부산', '대구', '광주', '대전', '울산', '세종', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'],
-    },
-    {
-      question: '이름을 알려주세요.',
-      field: 'name',
-      options: [],
-      inputType: 'text',
-    },
-    {
-      question: '연락처를 알려주세요.',
-      field: 'phone',
-      options: [],
-      inputType: 'tel',
-    },
-    {
-      question: '플랫폼 이용약관과 개인정보 처리방침에 동의합니다.',
-      field: 'agreeTerms',
-      options: ['확인했습니다.'],
-    },
-  ];
+  // 사용자 수동 스크롤 상태 추적
+  const [userHasScrolled, setUserHasScrolled] = useState(false);
+  const prevScrollTopRef = useRef(0);
+  const prevMessagesLengthRef = useRef(0);
   
-  // 스크롤을 항상 최신 메시지로 이동
+  // 스크롤 이벤트 처리
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    const handleScroll = () => {
+      if (!chatContainerRef.current) return;
+      
+      const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+      
+      // 사용자가 수동으로 스크롤했는지 확인 (스크롤 위치가 변경되었는지)
+      if (Math.abs(scrollTop - prevScrollTopRef.current) > 5) {
+        setUserHasScrolled(true);
+      }
+      
+      // 스크롤이 거의 하단에 있는지 확인 (30px 여유)
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 30;
+      
+      // 사용자가 하단으로 스크롤하면 자동 스크롤 다시 활성화
+      if (isAtBottom) {
+        setShouldAutoScroll(true);
+        setUserHasScrolled(false);
+      }
+      
+      prevScrollTopRef.current = scrollTop;
+    };
+
+    const chatContainer = chatContainerRef.current;
+    if (chatContainer) {
+      chatContainer.addEventListener('scroll', handleScroll);
+    }
+
+    return () => {
+      if (chatContainer) {
+        chatContainer.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, []);
   
-  // 컴포넌트 마운트 시 초기화
+  // 새 메시지 추가 시 스크롤 처리
+  useEffect(() => {
+    // 메시지가 추가된 경우에만 스크롤 처리
+    if (messages.length > prevMessagesLengthRef.current) {
+      // 사용자가 수동으로 스크롤하지 않았거나, 자동 스크롤이 활성화된 경우에만 스크롤
+      if (!userHasScrolled && shouldAutoScroll) {
+        // 스크롤 업데이트를 다음 티크에 실행하여 렌더링 완료 후 스크롤되도록 함
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    }
+    
+    // 현재 메시지 길이 저장
+    prevMessagesLengthRef.current = messages.length;
+  }, [messages, shouldAutoScroll, userHasScrolled]);
+  
+  // 컴포넌트 마운트 시 초기화 - 클라이언트 사이드에서만 실행
   useEffect(() => {
     // 메시지와 폼 데이터 초기화
     setMessages([]);
@@ -100,68 +157,94 @@ const CCTVInstallationForm = () => {
     setCurrentStep(0);
     
     // 첫 번째 메시지만 추가 (인트로)
+    const introId = `${baseId}-intro`;
+    const questionId = `${baseId}-question1`;
+    
     const introMessage = {
-      id: generateUniqueId(),
+      id: introId,
       type: 'system' as MessageType,
-      content: steps[0].question,
+      content: FORM_STEPS[0].question,
       options: [],
-      field: steps[0].field
+      field: FORM_STEPS[0].field
     };
     
     // 두 번째 메시지 (첫 번째 질문)
     const firstQuestion = {
-      id: generateUniqueId(),
+      id: questionId,
       type: 'system' as MessageType,
-      content: steps[1].question,
-      options: steps[1].options,
-      field: steps[1].field
+      content: FORM_STEPS[1].question,
+      options: FORM_STEPS[1].options,
+      field: FORM_STEPS[1].field
     };
     
     // 두 메시지를 한 번에 설정
     setMessages([introMessage, firstQuestion]);
     setCurrentStep(1);
-    setProgress(Math.min(100, Math.round((1 / steps.length) * 100)));
-  }, [steps]); // steps 의존성 추가
+    setProgress(Math.min(100, Math.round((1 / FORM_STEPS.length) * 100)));
+    
+    // idCounter 초기화
+    setIdCounter(2); // 이미 2개의 ID를 사용했으므로 2로 설정
+  }, []); // 빈 의존성 배열로 변경 - 컴포넌트 마운트 시에만 실행
   
-  // 고유 ID 생성 함수
+  // 고유 ID 생성 함수 - 클라이언트 사이드에서만 실행
+  const baseId = useId(); // React의 useId를 사용하여 안정적인 ID 생성
+  const [idCounter, setIdCounter] = useState(0);
+  
   const generateUniqueId = () => {
-    return Math.random().toString(36).substring(2, 9) + '-' + Date.now().toString(36);
+    setIdCounter(prev => prev + 1);
+    return `${baseId}-${idCounter}`;
   };
 
   // 메시지 추가 함수
-  const addMessage = (type: MessageType, content: string, options?: string[], field?: string) => {
-    const newMessage = {
+  const addMessage = (type: MessageType, content: string, options: string[] = [], field?: string) => {
+    const newMessage: Message = {
       id: generateUniqueId(),
       type,
       content,
       options,
-      field
+      field,
     };
-    
     setMessages(prev => [...prev, newMessage]);
+    
+    // 사용자가 스크롤을 아래로 내리지 않은 경우, 스크롤이 추가되었음을 알리는 표시 추가 가능
   };
   
   // 다음 단계로 이동
   const goToNextStep = () => {
     const nextStep = currentStep + 1;
-    if (nextStep < steps.length) {
-      const step = steps[nextStep];
+    if (nextStep < FORM_STEPS.length) {
+      const step = FORM_STEPS[nextStep];
       addMessage('system', step.question, step.options, step.field);
       setCurrentStep(nextStep);
-      setProgress(Math.min(100, Math.round((nextStep / steps.length) * 100)));
+      setProgress(Math.min(100, Math.round((nextStep / FORM_STEPS.length) * 100)));
     } else {
       // 모든 단계 완료
       handleSubmit();
     }
   };
   
-  // 옵션 선택 처리
+  // 옵션 선택 함수
   const handleOptionSelect = (option: string, field?: string) => {
-    if (field) {
+    if (!field) return;
+    
+    // 사용자 응답 추가
+    addMessage('user', option);
+    
+    // 폼 데이터 업데이트
+    if (field === 'agreeTerms') {
+      setFormData(prev => ({ ...prev, [field]: true }));
+    } else {
       setFormData(prev => ({ ...prev, [field]: option }));
-      addMessage('user', option);
-      goToNextStep();
     }
+    
+    // 사용자가 옵션을 선택했으니 자동 스크롤 활성화
+    setShouldAutoScroll(true);
+    setUserHasScrolled(false); // 사용자 수동 스크롤 상태 초기화
+    
+    // 다음 단계로 이동
+    setTimeout(() => {
+      goToNextStep();
+    }, 500);
   };
   
   // 텍스트 입력 처리
@@ -235,7 +318,7 @@ const CCTVInstallationForm = () => {
       </div>
       
       {/* 채팅 영역 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map(message => (
           <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
             {message.type === 'system' && (
@@ -259,7 +342,7 @@ const CCTVInstallationForm = () => {
                 {message.field && !message.options?.length && (
                   <form onSubmit={(e) => handleTextInput(e, message.field)} className="mt-3">
                     <input 
-                      type={steps.find(s => s.field === message.field)?.inputType || 'text'}
+                      type={FORM_STEPS.find(s => s.field === message.field)?.inputType || 'text'}
                       className="w-full p-2 border rounded-lg"
                       placeholder={`${message.field === 'name' ? '이름을' : '연락처를'} 입력해주세요`}
                       required

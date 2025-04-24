@@ -20,8 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='ko'>
-      <body className={`${notoSansKr.variable} font-sans min-h-screen flex flex-col`}>
+    <html lang='ko' suppressHydrationWarning>
+      <body className={`${notoSansKr.variable} font-sans min-h-screen flex flex-col`} suppressHydrationWarning>
         <header className='sticky top-0 z-50 bg-white shadow-sm'>
           <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
             <div className='flex justify-between items-center h-16'>
