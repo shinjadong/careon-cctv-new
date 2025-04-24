@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no"><title>PortOne</title><script src="B010077488_data/jquery-1.10.2.min.js"></script><script>
+function onScriptLoadFailed(src) {
+  try {
+    throw new Error('스크립트 (' + src + ') 로드 실패');
+  } catch (e) {
+    
+    var errorCode = 'SCRIPT_LOAD_FAILED_ON_TEMPLATE';
+    var errorData = {
+      pgProvider: 'naverpay',
+      source: '\/payments\/naverpay\/ready_m',
+      impUid: null,
+      requestData: {},
+      scriptSource: src
+    };
+    onScriptError(e, errorCode, errorData)
+  }
+}
+
+function onScriptError(e, errorCode, errorData) {
+  var requestData = (errorData && errorData.requestData) || {};
+
+  window.parent.postMessage(JSON.stringify({
+    action: 'ERROR_ON_TEMPLATE',
+    data: {
+      success: false,
+      request_id: requestData.request_id || null,
+      imp_uid: errorData.impUid || null,
+      merchant_uid: requestData.merchant_uid || null,
+      error_code: errorCode,
+      error_msg: e ? e.message : '알 수 없는 이유로 스크립트 실행에 실패하였습니다',
+      portoneError: {
+        errorCode: errorCode,
+        errorData: errorData,
+        stackTrace: e ? e.stack : null,
+      }
+    }
+  }), '*');
+}
+
+function _response(action, data, source) {
+  
+  
+  
+  
+  source.postMessage(JSON.stringify({ action: action, data: data }), '*');
+}
+
+function IMP_mask_display(display) {
+  var op = $.extend({}, display);
+
+  
+  
+  
+  if (Array.isArray(op.card_quota) && op.card_quota.length == 0) {
+    op.card_quota = [1];
+  }
+
+  return op;
+}
+
+window.addEventListener('message', function(e) {
+  try {
+    var rawMessageData = JSON.parse(e.data);
+    if (
+      !rawMessageData.hasOwnProperty('action') || 
+      rawMessageData.hasOwnProperty('success') || 
+      rawMessageData.action === 'communicate' 
+    ) { return; }
+
+    $.ajax({
+      type : 'POST',
+      url: '/events',
+      contentType: 'application/json',
+      async: true,
+      data: JSON.stringify({userCode : 'imp56778396', source: '\/payments\/naverpay\/ready_m', rawRequest: rawMessageData})
+    });
+  } catch (e) {
+    
+  }
+}, false);
+</script><script>
+(function(window) {
+  var data = null;
+  var errorData = {
+    pgProvider: 'naverpay',
+    source: '\/payments\/naverpay\/ready_m',
+    impUid: null,
+    requestData: null,
+  };
+
+  window.onerror = function(msg, url, lineNo, columnNo, e) {
+    onScriptError(e, 'SCRIPT_ERROR_ON_TEMPLATE', errorData);
+  };
+
+  function on_message(e) {
+    var obj = {},
+      action = null,
+      request_id = null;
+    var source = e.source;
+    var origin = e.origin;
+
+    try {
+      obj = JSON.parse(e.data);
+      action = obj.action;
+      data = obj.data || {};
+      request_id = data.request_id;
+      origin = obj.origin || origin;
+    } catch(e) {}
+
+    errorData['requestData'] = data;
+
+    if ( action == 'payment' ) {
+      var custom_data = JSON.stringify(data.custom_data);
+      var asPopup = data.naverPopupMode || (data.naverV2 && !data.m_redirect_url);
+
+      $.ajax({
+        type : 'POST',
+        url : data.naverV2 ? '/npay/prepare.json' : '/naver_payments/prepare.json',
+        dataType : 'json',
+        data : {
+          channel : 'mobile',
+          provider : 'naverpay',
+          pay_method : data.pay_method, 
+          channelGroupId: data.channelGroupId,
+          amount : data.amount,
+          tax_free : data.tax_free,
+          name : data.name,
+          merchant_uid : data.merchant_uid,
+          store_id: 'undefined',
+          user_code : 'imp56778396',
+          tier_code : data.tier_code,
+          request_id : request_id,
+          pg_id : 'np_uxxsu537854',
+          channel_key: '',
+          buyer_name : data.buyer_name,
+          buyer_email : data.buyer_email,
+          buyer_tel : data.buyer_tel,
+          buyer_addr : data.buyer_addr,
+          buyer_postcode : data.buyer_postcode,
+          customer_uid : data.customer_uid,
+          origin : origin,
+          m_redirect_url : data.m_redirect_url,
+          custom_data : custom_data,
+          notice_url : data.notice_url,
+          confirm_url : data.confirm_url,
+          customer_id : data.customer_id,
+          _extra : {
+            popupMode : asPopup,
+            layerMode : false,
+            purchaserName : data.naverPurchaserName,
+            purchaserBirthday : data.naverPurchaserBirthday,
+            naverProducts : data.naverProducts || data.naver_products,
+            cultureBenefit : data.naverCultureBenefit,
+            useCfm : data.naverUseCfm,
+            productCode : data.naverProductCode || (new Date()).getTime(),
+            actionType : data.naverActionType,
+            chainId: data.naverChainId,
+            origin : origin,
+            merchantUserKey : data.naverMerchantUserKey,
+            productCount: data.naverProductCount
+          }
+        },
+        error : function(xhr, status, err) {
+          return _response('', {
+            success:false,
+            request_id:request_id,
+            imp_uid: null,
+            merchant_uid: data.merchant_uid,
+            error_code:'HTTP_ERROR:' + xhr.status,
+            error_msg:'결제 시작을 위해 서버와 통신하는 중 에러가 발생하였습니다',
+            portoneError: {
+              errorCode: 'PREPARE_REQUEST_TO_CONTROLLER_FAILED',
+              errorData: errorData
+            }
+          }, source, origin);
+        }
+      }).done(function(rsp) {
+        errorData['impUid'] = rsp.data.impUid || rsp.data.imp_uid;
+
+        var portoneError = {
+          errorCode: rsp.data.portone_error_code || 'PREPARE_UNKNOWN',
+          errorData: errorData
+        };
+
+        if ( rsp.code == 0 ) {
+          if ( data.naverV2 ) {
+            
+            var proxyData = {
+              impUid : rsp.data.impUid,
+              mode : rsp.data.sandbox ? "development" : "production",
+              clientId : rsp.data.clientId,
+              payType : data.customer_uid ? "recurrent" : "normal",
+              openType : asPopup ? "popup" : "page",
+              productName : data.name,
+              totalPayAmount : rsp.data.totalPayAmount,
+              taxScopeAmount : rsp.data.taxScopeAmount,
+              taxExScopeAmount : rsp.data.taxExScopeAmount,
+              returnUrl : rsp.data.returnUrl,
+              productCount : rsp.data.productCount,
+              productItems : rsp.data.productItems,
+              extraDeduction : rsp.data.extraDeduction,
+              useCfmYmdt : rsp.data.useCfmYmdt,
+              requestId : request_id,
+              pgProvider: 'naverpay',
+              custom: {
+                sdk: 'https://nsp.pay.naver.com/sdk/js/naverpay.min.js',
+              },
+              data: data,
+            };
+
+            _response('naverpay.modal.v2', proxyData, source, origin);
+          } else {
+            if ( !data.naverPopupMode && !data.m_redirect_url ) {
+              return _response('', {
+                success:false,
+                request_id:request_id,
+                imp_uid: rsp.data.impUid,
+                merchant_uid: data.merchant_uid,
+                error_code:"MISSINGPARAM",
+                error_msg:"naverPopupMode : true가 아닌 경우에는 m_redirect_url이 필요합니다.",
+                portoneError: {
+                  errorCode: 'PREPARE_REQUEST_VALIDATION_FAILED',
+                  errorData: errorData
+                }
+              }, source, origin);
+            }
+
+            var proxyData = {
+              impUid : rsp.data.impUid,
+              payUrl : rsp.data.payUrl,
+              popupMode : data.naverPopupMode
+            };
+
+            _response('naverpay.modal', proxyData, source, origin);
+          }
+        } else {
+          var errorResponse = {
+            success: false,
+            request_id: request_id,
+            imp_uid: rsp.data.impUid || rsp.data.imp_uid,
+            merchant_uid: data.merchant_uid,
+            error_code: rsp.data.error_code,
+            error_msg: rsp.data.error_msg,
+            portoneError: portoneError
+          };
+          _response('naverpay.modal.close', errorResponse, source, origin);
+        }
+      });
+    } else if ( action === 'communicate' && data ) {
+      if ( data.result === 'check.closing' ) { 
+        location.href = '/naver_payments/closing/' + (data.imp_uid || errorData['impUid']) + '/' + request_id;
+      } else if ( data.result === 'request.approve' ) {
+        var params = [
+              ["resultCode", encodeURIComponent(data.authData.resultCode)].join("="),
+              ["resultMessage", encodeURIComponent(data.authData.resultMessage)].join("="),
+              ["reserveId", encodeURIComponent(data.authData.reserveId)].join("="),
+              ["paymentId", encodeURIComponent(data.authData.paymentId)].join("=")
+            ],
+            sep = data.return_url.indexOf("?") ? "&":"?";
+
+        location.href = data.return_url + sep + params.join("&");
+      } else if (data.error_code === 'SCRIPT_LOAD_FAILED_ON_SDK') {
+        _response('ERROR_ON_SDK', data, source, origin);
+      }
+    }
+  }
+
+  window.addEventListener("message", on_message, false);
+}).call({}, window);
+</script></head>
+
+<body style=""></body></html>

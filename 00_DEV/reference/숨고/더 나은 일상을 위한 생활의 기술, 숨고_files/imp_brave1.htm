@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no"><title>PortOne</title></head><body style=""><form id="order_form" name="order_form" method="post">
+  
+  <input type="hidden" name="PHash" value="">
+  <input type="hidden" name="PData" value="">
+  <input type="hidden" name="PStateCd" value="">
+  <input type="hidden" name="POrderId" value="">
+  
+
+  <input type="hidden" name="PNoteUrl" value="https://service.iamport.kr/settle_payments/result"> 
+  <input type="hidden" name="PNextPUrl" value="https://service.iamport.kr/settle_payments/relay"> 
+  <input type="hidden" name="PCancPUrl" value="https://service.iamport.kr/settle_payments/close"> 
+
+  <input type="hidden" name="PEmail" value=""> 
+  <input type="hidden" name="PPhone" value=""> 
+  <input type="hidden" name="POid"> 
+  <input type="hidden" name="t_PGoods" value=""> 
+  <input type="hidden" name="t_PNoti" value=""> 
+  <input type="hidden" name="t_PMname" value=""> 
+  <input type="hidden" name="t_PUname" value=""> 
+  <input type="hidden" name="t_PBname" value=""> 
+  <input type="hidden" name="PEname" value=""> 
+  <input type="hidden" name="PVtransDt" value=""> 
+  <input type="hidden" name="PTarget" value="">
+
+  
+  <input type="hidden" name="PGoods">
+  <input type="hidden" name="PNoti">
+  <input type="hidden" name="PMname">
+  <input type="hidden" name="PUname">
+  <input type="hidden" name="PBname">
+
+  <input type="hidden" name="PMid" value="imp_brave1"> 
+  <input type="hidden" name="PAmt" value=""> 
+</form>
+<form name="vbank010_form" method="post">
+  <input type="hidden" name="mchtId" value="">
+  <input type="hidden" name="method" value="vbank010">
+  <input type="hidden" name="trdDt" value="">
+  <input type="hidden" name="trdTm" value="">
+  <input type="hidden" name="mchtTrdNo">
+  <input type="hidden" name="mchtName">
+  <input type="hidden" name="mchtEName">
+  <input type="hidden" name="pmtPrdtNm" value="">
+  <input type="hidden" name="trdAmt" value="">
+  <input type="hidden" name="mchtCustNm">
+  <input type="hidden" name="custAcntSumry" value="">
+  <input type="hidden" name="expireDt" value="">
+  <input type="hidden" name="notiUrl" value="">
+  <input type="hidden" name="nextUrl" value="">
+  <input type="hidden" name="cancUrl" value="">
+  <input type="hidden" name="mchtParam" value="">
+  <input type="hidden" name="email" value="">
+  <input type="hidden" name="cphoneNo" value="">
+  <input type="hidden" name="mchtCusId" value="">
+  <input type="hidden" name="taTypeCd" value="">
+  <input type="hidden" name="tacAmt" value="">
+  <input type="hidden" name="vatAmt" value="">
+  <input type="hidden" name="taxFreeAmt" value="">
+  <input type="hidden" name="custIp" value="">
+  <input type="hidden" name="csrclssTypeCd" value="">
+  <input type="hidden" name="pktHash" value="">
+</form>
+<script src="B010077488_data/jquery-1.10.2.min.js"></script>
+<script>
+function onScriptLoadFailed(src) {
+  try {
+    throw new Error('스크립트 (' + src + ') 로드 실패');
+  } catch (e) {
+    
+    var errorCode = 'SCRIPT_LOAD_FAILED_ON_TEMPLATE';
+    var errorData = {
+      pgProvider: 'settle',
+      source: '\/payments\/settle\/ready_m',
+      impUid: null,
+      requestData: {},
+      scriptSource: src
+    };
+    onScriptError(e, errorCode, errorData)
+  }
+}
+
+function onScriptError(e, errorCode, errorData) {
+  var requestData = (errorData && errorData.requestData) || {};
+
+  window.parent.postMessage(JSON.stringify({
+    action: 'ERROR_ON_TEMPLATE',
+    data: {
+      success: false,
+      request_id: requestData.request_id || null,
+      imp_uid: errorData.impUid || null,
+      merchant_uid: requestData.merchant_uid || null,
+      error_code: errorCode,
+      error_msg: e ? e.message : '알 수 없는 이유로 스크립트 실행에 실패하였습니다',
+      portoneError: {
+        errorCode: errorCode,
+        errorData: errorData,
+        stackTrace: e ? e.stack : null,
+      }
+    }
+  }), '*');
+}
+
+function _response(action, data, source) {
+  
+  
+  
+  
+  source.postMessage(JSON.stringify({ action: action, data: data }), '*');
+}
+
+function IMP_mask_display(display) {
+  var op = $.extend({}, display);
+
+  
+  
+  
+  if (Array.isArray(op.card_quota) && op.card_quota.length == 0) {
+    op.card_quota = [1];
+  }
+
+  return op;
+}
+
+window.addEventListener('message', function(e) {
+  try {
+    var rawMessageData = JSON.parse(e.data);
+    if (
+      !rawMessageData.hasOwnProperty('action') || 
+      rawMessageData.hasOwnProperty('success') || 
+      rawMessageData.action === 'communicate' 
+    ) { return; }
+
+    $.ajax({
+      type : 'POST',
+      url: '/events',
+      contentType: 'application/json',
+      async: true,
+      data: JSON.stringify({userCode : 'imp56778396', source: '\/payments\/settle\/ready_m', rawRequest: rawMessageData})
+    });
+  } catch (e) {
+    
+  }
+}, false);
+</script>
+
+<script>
+function confirm_settle(imp_uid, request_id, error) {
+  if ( error ) { 
+    window.location.href = 'https:\/\/service.iamport.kr/payments/fail?imp_uid=' + imp_uid + '&request_id=' + request_id + '&error_msg=' + error;
+  } else { 
+    window.location.href = 'https:\/\/service.iamport.kr/payments/success?imp_uid=' + imp_uid + '&request_id=' + request_id;;
+  }
+}
+
+(function(window) {
+  var data = null;
+  var errorData = {
+    pgProvider: 'settle',
+    source: '\/payments\/settle\/ready_m',
+    impUid: null,
+    requestData: null,
+  };
+
+  window.onerror = function(msg, url, lineNo, columnNo, e) {
+    onScriptError(e, 'SCRIPT_ERROR_ON_TEMPLATE', errorData);
+  };
+
+  function _url(method) {
+    var domain = "https:\/\/npg.settlebank.co.kr";
+
+    switch(method) {
+      case 'card' : 
+      return domain + "/card/MbNewCardAction.do";
+
+      case 'trans' : 
+      return domain + "/bank/MbNewBankAction.do";
+
+      case 'vbank' : 
+      return domain + "/vbank/MbNewVBankAction.do";
+
+      case 'phone' : 
+      return domain + "/mobile/MbNewMobileAction.do";
+    }
+
+    return domain + "/card/MbNewCardAction.do";
+  }
+
+  function _vbank_due(due) {
+    var def = "";
+    if (typeof due == 'string') {
+      var s = due.replace(/\D/g,'');
+
+      if (s.length >= 14) {
+        return s.substr(0, 14);
+      } else if (s.length >= 8) {
+        var hhmmss = s.substr(8, 6);
+
+        if ( hhmmss ) { 
+          hhmmss = hhmmss + "000000".substr(0, 6-hhmmss.length);
+        } else {
+          hhmmss = "235959";
+        }
+
+        return s.substr(0, 8) + hhmmss;
+      }
+    }
+
+    return def;
+  }
+
+  function on_card() {
+    var order_form = document.order_form;
+    window.name = "STPG_CLIENT";
+    order_form.action = "https:\/\/npg.settlebank.co.kr/card/MbCardAction.do";
+    strEncode();
+    order_form.submit();
+  }
+
+  function on_bank() {
+    window.name = "STPG_CLIENT";
+    var order_form = document.order_form;
+    order_form.action = "https:\/\/npg.settlebank.co.kr/bank/MbBankAction.do";
+    strEncode();
+    order_form.submit();
+  }
+
+  function on_vbank() {
+    window.name = "STPG_CLIENT";
+    var order_form = document.order_form;
+    order_form.action = "https:\/\/npg.settlebank.co.kr/vbank/MbVBankAction.do?equ_gb=MB";
+    strEncode();
+    order_form.submit();
+  }
+
+  
+  function strEncode(){
+    var order_form = document.order_form;
+    order_form.PGoods.value = encodeURI(order_form.t_PGoods.value);
+    order_form.PNoti.value = encodeURI(order_form.t_PNoti.value);
+    order_form.PMname.value = encodeURI(order_form.t_PMname.value);
+    order_form.PUname.value = encodeURI(order_form.t_PUname.value);
+    order_form.PBname.value = encodeURI(order_form.t_PBname.value);
+  }
+
+  function formToJson(frm) {
+    var arr = $(frm).serializeArray(),
+      obj = {};
+
+    $.each(arr, function() {
+      obj[ this.name ] = this.value;
+    });
+
+    return obj;
+  }
+
+  function doPayment(frm, source, origin, version) {
+    strEncode();
+
+    if ( version === "1.1.0" || version === "1.1.1" || version === "1.1.2" || version === "1.1.3" || version === "1.1.4" || version === "1.1.5" || version === "1.1.6" || version === "1.1.7" || version === "1.1.8" || version === "1.2.0" ) {
+      var proxyData = {
+        formId : frm.id,
+        action : frm.action,
+        target : "_top",
+        method : "post",
+        param : formToJson(frm),
+        charset : "utf-8"
+      }
+
+      _response('proxy.post', proxyData, source, origin);
+    } else {
+      
+
+      frm.target = "_top";
+      frm.submit();
+    }
+  }
+
+  function getBypassData(data, key) {
+    if (data.bypass && data.bypass.settle && data.bypass.settle[key]) {
+      return data.bypass.settle[key];
+    }
+
+    return null;
+  }
+
+  function handleVbank010(rsp, data, notiParam) {
+    var frm = document.forms['vbank010_form'];
+
+    frm.elements['mchtId'].value = rsp.pg_id;
+    frm.elements['mchtTrdNo'].value = rsp.imp_uid;
+    frm.elements['pmtPrdtNm'].value = data.name;
+    frm.elements['expireDt'].value = _vbank_due(data.vbank_due)
+
+    frm.elements['notiUrl'].value = "https:\/\/service.iamport.kr/settle_payments/result";
+    frm.elements['nextUrl'].value = "https:\/\/service.iamport.kr/settle_payments/relay/vbank010";
+    frm.elements['cancUrl'].value = "https:\/\/service.iamport.kr/settle_payments/close/vbank010";
+
+    frm.elements['mchtParam'].value = notiParam;
+
+    var keys = [
+      'trdAmt',
+      'mchtCustNm',
+      'pktHash',
+      'trdDt',
+      'trdTm',
+      'mchtName',
+      'mchtEName'
+    ]
+
+    for (var k of keys) {
+      frm.elements[k].value = rsp.vbank010[k];
+    }
+
+    frm.action = 'https:\/\/npg.settlebank.co.kr' + '/vbank010/main.do'
+
+    return frm;
+  }
+
+  function handlePhonePayment(rsp) {
+    var form = document.createElement('form');
+
+    form.name = form.id = 'phone_form';
+    form.method = 'post';
+    form.action = 'https:\/\/npg.settlebank.co.kr' + '/mobile/main.do';
+    form.target = '_self';
+
+    for (var key in rsp.phone) {
+      var input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = rsp.phone[key];
+      form.appendChild(input);
+    }
+
+    document.body.appendChild(form);
+
+    return form;
+  }
+
+  function on_message(e) {
+    var obj = {},
+      action = null,
+      request_id = null;
+    var source = e.source;
+    var origin = e.origin;
+
+    try {
+      obj = JSON.parse(e.data);
+      action = obj.action;
+      data = obj.data || {};
+      request_id = data.request_id;
+      origin = obj.origin || origin;
+    } catch(e) {}
+
+    errorData['requestData'] = data;
+
+    if ( action == 'payment' ) {
+      var custom_data = JSON.stringify(data.custom_data);
+
+      $.ajax({
+        type : 'POST',
+        url : '/settle_payments/prepare.json',
+        dataType : 'json',
+        data : {
+          channel : 'mobile',
+          provider : 'settle',
+          pay_method : data.pay_method, 
+          channelGroupId: data.channelGroupId,
+          amount : data.amount,
+          name : data.name,
+          merchant_uid : data.merchant_uid,
+          store_id: 'undefined',
+          user_code : 'imp56778396',
+          tier_code : data.tier_code,
+          pg_id : 'imp_brave1',
+          channel_key: '',
+          company : data.company,
+          company_en: data.company_en,
+          buyer_name : data.buyer_name,
+          buyer_email : data.buyer_email,
+          buyer_tel : data.buyer_tel,
+          buyer_addr : data.buyer_addr,
+          buyer_postcode : data.buyer_postcode,
+          origin : origin,
+          app_scheme : data.app_scheme,
+          m_redirect_url : data.m_redirect_url,
+          custom_data : custom_data,
+          notice_url : data.notice_url,
+          prefill : data.prefill,
+          phone : data.phone,
+          request_id : request_id,
+          _extra: {
+            vbank010: getBypassData(data, 'vbank010')
+          }
+        },
+        error : function(xhr, status, err) {
+          return _response('', {
+            success:false,
+            request_id:request_id,
+            error_code:'HTTP_ERROR:' + xhr.status,
+            error_msg:'결제 시작을 위해 서버와 통신하는 중 에러가 발생하였습니다',
+            portoneError: {
+              errorCode: 'PREPARE_REQUEST_TO_CONTROLLER_FAILED',
+              errorData: errorData
+            }
+          }, source, origin);
+        }
+      }).done(function(rsp) {
+        errorData['impUid'] = rsp.data.imp_uid;
+
+        var portoneError = {
+          errorCode: rsp.data.portone_error_code || 'PREPARE_UNKNOWN',
+          errorData: errorData
+        };
+
+        if ( rsp.code == 0 ) {
+
+          var notiParam = 'imp_uid='+rsp.data.imp_uid+'|request_id='+request_id+'|user_code=imp56778396'; 
+
+          if (data.pay_method === 'vbank' && rsp.data.vbank010 !== undefined) {
+            doPayment(handleVbank010(rsp.data, data, notiParam), rsp.data.imp_uid, source, origin);
+            return;
+          } else if (data.pay_method === 'phone') {
+            doPayment(handlePhonePayment(rsp.data), source, origin, obj.version);
+            return;
+          }
+
+          var frm = document.forms["order_form"];
+
+          
+          frm.elements['POid'].value = rsp.data.imp_uid;
+          frm.elements['PAmt'].value = data.amount;
+          frm.elements['PEmail'].value = data.buyer_email;
+          frm.elements['PPhone'].value = data.buyer_tel;
+          frm.elements['t_PGoods'].value = data.name;
+          frm.elements['t_PUname'].value = data.buyer_name;
+          frm.elements['t_PBname'].value = data.buyer_name;
+          frm.elements['t_PNoti'].value = notiParam;
+
+          if ( rsp.data.is_legacy ) {
+            switch ( data.pay_method ) {
+              case 'card' :
+                on_card();
+              break;
+
+              case 'trans' :
+                on_bank();
+              break;
+
+              case 'vbank' :
+                
+                
+                frm.elements['t_PBname'].value = rsp.data.vbank_holder;
+                frm.elements['PVtransDt'].value = _vbank_due(data.vbank_due);
+                on_vbank();
+              break;
+
+              default :
+                on_card();
+            }
+          } else {
+            switch ( data.pay_method ) {
+              case 'vbank' :
+                
+                
+                frm.elements['t_PBname'].value = rsp.data.vbank_holder;
+                frm.elements['PVtransDt'].value = _vbank_due(data.vbank_due);
+                break;
+            }
+
+            frm.elements['PNextPUrl'].value = "https:\/\/service.iamport.kr/settle_payments/relay/new";
+            frm.elements['PCancPUrl'].value = "https:\/\/service.iamport.kr/settle_payments/close/new";
+
+            frm.action = _url(data.pay_method);
+            doPayment(frm, source, origin, obj.version);
+          }
+        } else {
+          var errorResponse = {
+            success: false,
+            request_id: request_id,
+            imp_uid: rsp.data.imp_uid,
+            merchant_uid: data.merchant_uid,
+            error_code: rsp.data.error_code,
+            error_msg: rsp.data.error_msg,
+            portoneError: portoneError
+          };
+          _response('', errorResponse, source, origin);
+        }
+      });
+    }
+  }
+
+  window.addEventListener("message", on_message, false);
+}).call({}, window);
+</script>
+</body></html>
