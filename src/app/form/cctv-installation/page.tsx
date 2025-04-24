@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { ChevronLeft, Check } from 'lucide-react';
 
 type FormData = {
@@ -122,7 +121,7 @@ const CCTVInstallationForm = () => {
     setMessages([introMessage, firstQuestion]);
     setCurrentStep(1);
     setProgress(Math.min(100, Math.round((1 / steps.length) * 100)));
-  }, []);
+  }, [steps]); // steps 의존성 추가
   
   // 고유 ID 생성 함수
   const generateUniqueId = () => {

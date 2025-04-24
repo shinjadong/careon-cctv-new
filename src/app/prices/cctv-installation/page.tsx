@@ -1,5 +1,4 @@
 import React from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { Metadata } from 'next';
 
@@ -98,9 +97,9 @@ const CCTVInstallationPrice = () => {
         <h2 className="text-2xl font-bold mb-4">고객 후기</h2>
         <div className="bg-gray-50 p-4 rounded-lg italic">
           <p className="text-gray-700">
-            "단독주택에 맘 놓고 살려고 CCTV 설치를 부탁했어요. 꼼꼼하게 위치 선정해주셔서 사각지대도 없고, 
+            &ldquo;단독주택에 맘 놓고 살려고 CCTV 설치를 부탁했어요. 꼼꼼하게 위치 선정해주셔서 사각지대도 없고, 
             기존 인테리어에 방해 안 되게 신경 써주셔서 외관도 만족스러워요. 야간에도 잘 보이는 고화질 CCTV 
-            덕분에 밤에도 편히 잘 수 있어요! 감사합니다."
+            덕분에 밤에도 편히 잘 수 있어요! 감사합니다.&rdquo;
           </p>
         </div>
       </div>

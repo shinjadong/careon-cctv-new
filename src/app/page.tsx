@@ -210,7 +210,7 @@ export default function Home() {
                 </div>
               </div>
               <p className="text-gray-700 italic">
-                "단독주택에 맘 놓고 살려고 CCTV 설치를 부탁했어요. 꼼꼼하게 위치 선정해주셔서 사각지대도 없고, 기존 인테리어에 방해 안 되게 신경 써주셔서 외관도 만족스러워요."
+                &ldquo;단독주택에 맘 놓고 살려고 CCTV 설치를 부탁했어요. 꼼꼼하게 위치 선정해주셔서 사각지대도 없고, 기존 인테리어에 방해 안 되게 신경 써주셔서 외관도 만족스러워요.&rdquo;
               </p>
             </div>
             
@@ -227,7 +227,7 @@ export default function Home() {
                 </div>
               </div>
               <p className="text-gray-700 italic">
-                "카페 운영 중인데 CCTV 설치 후 매장 관리가 훨씬 수월해졌어요. 고화질 영상으로 매장 상황을 실시간으로 확인할 수 있어 안심이 됩니다."
+                &ldquo;카페 운영 중인데 CCTV 설치 후 매장 관리가 훨씬 수월해졌어요. 고화질 영상으로 매장 상황을 실시간으로 확인할 수 있어 안심이 됩니다.&rdquo;
               </p>
             </div>
             
@@ -244,7 +244,7 @@ export default function Home() {
                 </div>
               </div>
               <p className="text-gray-700 italic">
-                "사무실 보안을 위해 설치했는데, 전문가의 조언으로 최적의 위치에 설치할 수 있었습니다. 가격도 합리적이고 서비스도 만족스러웠습니다."
+                &ldquo;사무실 보안을 위해 설치했는데, 전문가의 조언으로 최적의 위치에 설치할 수 있었습니다. 가격도 합리적이고 서비스도 만족스러웠습니다.&rdquo;
               </p>
             </div>
           </div>
